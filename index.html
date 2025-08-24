@@ -152,7 +152,7 @@
     /**
      * @file Consulta CNPJ - Versão Refatorada com Otimização de API
      * @author HAlexandre
-     * @version 2.1.0
+     * @version 2.3.0
      */
 
     // --- Módulo de UI ---
@@ -170,10 +170,6 @@
         signature: document.getElementById('signature'),
       },
 
-      /**
-       * Configura a UI para o estado de carregamento ou normal.
-       * @param {boolean} isLoading - True se estiver carregando.
-       */
       setLoading(isLoading) {
         this.dom.consultarBtn.disabled = isLoading;
         if (isLoading) {
@@ -186,28 +182,23 @@
         }
       },
 
-      /**
-       * Exibe uma mensagem de erro ou informação.
-       * @param {string} message - A mensagem a ser exibida.
-       */
       showMessage(message) {
         this.dom.resultadoDiv.innerHTML = `<div class="p-6 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-xl border-2 border-red-200 dark:border-red-500/30 animate-slide-up"><div class="flex items-start gap-3"><svg class="w-6 h-6 text-red-500 dark:text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg><div><h3 class="font-semibold mb-1">Erro na Consulta</h3><p>${message}</p></div></div></div>`;
       },
 
-      /**
-       * Renderiza os resultados da consulta na página.
-       * @param {object} data - Os dados da empresa retornados pela API.
-       */
       renderResults(data) {
-        const createRow = (label, value, icon) => {
+        const createRow = (label, value) => {
           if (!value && value !== 0 && value !== false) return '';
-          const iconHtml = icon ? `<div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center"><svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">${icon}</svg></div>` : '';
           return `<div class="result-item flex items-center gap-4 py-4 px-2 -mx-2 dark:hover:bg-white/5"><div class="flex-grow"><dt class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">${label}</dt><dd class="text-base text-gray-900 dark:text-gray-100 font-medium">${value}</dd></div></div>`;
         };
 
         const endereco = [data.logradouro, data.numero, data.complemento, data.bairro, `${data.municipio} - ${data.uf}`, data.cep].filter(Boolean).join(', ');
         const capital = data.capital_social ? parseFloat(data.capital_social).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'Não informado';
         const simOuNao = (v) => v ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">Sim</span>' : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">Não</span>';
+        const cnaePrincipal = `${data.cnae_fiscal} - ${data.cnae_fiscal_descricao}`;
+        const cnaesSecundarios = data.cnaes_secundarios && data.cnaes_secundarios.length > 0
+            ? `<ul class="list-disc list-inside pl-2 text-left space-y-1">${data.cnaes_secundarios.map(cnae => `<li><strong>${cnae.codigo}</strong> - ${cnae.descricao}</li>`).join('')}</ul>`
+            : 'Não informada';
 
         const infoEmpresaHtml = `
           <div class="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-700/50 dark:to-gray-800/50 rounded-xl p-6 border border-blue-100 dark:border-gray-700 animate-slide-up">
@@ -215,8 +206,10 @@
             <dl class="divide-y divide-gray-100 dark:divide-gray-700">
               ${createRow('Razão Social', data.razao_social)}
               ${createRow('Nome Fantasia', data.nome_fantasia)}
+              ${createRow('Atividade Principal (CNAE)', cnaePrincipal)}
+              ${createRow('Atividades Secundárias', cnaesSecundarios)}
               ${createRow('Situação Cadastral', data.descricao_situacao_cadastral)}
-              ${createRow('Data da Situação', data.data_situacao_cadastral)}
+              ${createRow('Data da Situação', this.formatDate(data.data_situacao_cadastral))}
               ${createRow('Capital Social', capital)}
               ${createRow('Endereço', endereco)}
               ${createRow('Telefone', data.ddd_telefone_1)}
@@ -229,21 +222,17 @@
             <div class="flex items-center gap-3 mb-6"><div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg></div><div><h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Simples Nacional</h2><p class="text-sm text-gray-600 dark:text-gray-400">Informações de enquadramento</p></div></div>
             <dl class="divide-y divide-gray-100 dark:divide-gray-700">
               ${createRow('Optante pelo Simples', simOuNao(data.opcao_pelo_simples))}
-              ${createRow('Data de Opção', data.data_opcao_pelo_simples)}
-              ${createRow('Data de Exclusão', data.data_exclusao_do_simples)}
+              ${createRow('Data de Opção', this.formatDate(data.data_opcao_pelo_simples))}
+              ${createRow('Data de Exclusão', this.formatDate(data.data_exclusao_do_simples))}
               ${createRow('Optante pelo MEI', simOuNao(data.opcao_pelo_mei))}
-              ${createRow('Data de Opção pelo MEI', data.data_opcao_pelo_mei)}
-              ${createRow('Data de Exclusão do MEI', data.data_exclusao_do_mei)}
+              ${createRow('Data de Opção pelo MEI', this.formatDate(data.data_opcao_pelo_mei))}
+              ${createRow('Data de Exclusão do MEI', this.formatDate(data.data_exclusao_do_mei))}
             </dl>
           </div>`;
         
         this.dom.resultadoDiv.innerHTML = infoEmpresaHtml + infoSimplesHtml;
       },
 
-      /**
-       * Renderiza o histórico de consultas.
-       * @param {Array<Object>} history - O array de itens do histórico.
-       */
       renderHistory(history) {
         if (history.length === 0) {
           this.dom.historicoDiv.classList.add('hidden');
@@ -260,16 +249,18 @@
           </div>`).join('');
       },
 
-      /**
-       * Formata um CNPJ para exibição (com pontos, barra e hífen).
-       * @param {string} cnpj - O CNPJ sem formatação.
-       * @returns {string} O CNPJ formatado.
-       */
       formatCnpj(cnpj) {
         return cnpj?.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') || '';
       },
+      
+      formatDate(dateString) {
+        if (!dateString) return '';
+        const parts = dateString.split('-');
+        if (parts.length !== 3) return dateString;
+        const [year, month, day] = parts;
+        return `${day}/${month}/${year}`;
+      },
 
-      /** Carrega o tema salvo. */
       loadTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -280,7 +271,6 @@
         }
       },
 
-      /** Define a assinatura dinâmica. */
       setSignature() {
         this.dom.signature.innerHTML = `<p>Feito por HAlexandre © ${new Date().getFullYear()}</p>`;
       }
@@ -288,11 +278,6 @@
 
     // --- Módulo da API ---
     const API = {
-      /**
-       * Busca os dados de um CNPJ na BrasilAPI.
-       * @param {string} cnpj - O CNPJ a ser consultado.
-       * @returns {Promise<Object>} Os dados da empresa.
-       */
       async fetchCnpjData(cnpj) {
         const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
         if (!response.ok) {
@@ -307,21 +292,11 @@
     // --- Módulo de Histórico ---
     const History = {
       key: 'cnpj-historico',
-      
-      /** Obtém o histórico do localStorage. */
-      get() {
-        return JSON.parse(localStorage.getItem(this.key) || '[]');
-      },
-
-      /**
-       * Adiciona um item ao histórico.
-       * @param {string} cnpj - O CNPJ consultado.
-       * @param {string} razaoSocial - A razão social da empresa.
-       */
+      get() { return JSON.parse(localStorage.getItem(this.key) || '[]'); },
       add(cnpj, razaoSocial) {
         if (!razaoSocial) return;
         let history = this.get();
-        history = history.filter(item => item.cnpj !== cnpj); // Remove duplicados
+        history = history.filter(item => item.cnpj !== cnpj);
         history.unshift({ cnpj, razaoSocial, data: new Date().toISOString() });
         if (history.length > 5) history.pop();
         localStorage.setItem(this.key, JSON.stringify(history));
@@ -331,22 +306,15 @@
 
     // --- Módulo Principal da Aplicação ---
     const App = {
-      /**
-       * Inicia a consulta do CNPJ.
-       * @param {string|null} cnpjFromHistory - Um CNPJ vindo do histórico (opcional).
-       */
       async consultar(cnpjFromHistory = null) {
         const cnpj = cnpjFromHistory || UI.dom.cnpjInput.value.replace(/\D/g, '');
-        
         if (cnpj.length !== 14 || /^(\d)\1{13}$/.test(cnpj)) {
           UI.showMessage('Por favor, digite um CNPJ válido com 14 dígitos.');
           return;
         }
-        
         if (!cnpjFromHistory) {
           UI.dom.cnpjInput.value = UI.formatCnpj(cnpj);
         }
-
         UI.setLoading(true);
         try {
           const data = await API.fetchCnpjData(cnpj);
@@ -359,7 +327,6 @@
         }
       },
       
-      /** Configura os eventos iniciais. */
       initEvents() {
         UI.dom.consultarBtn.addEventListener('click', () => this.consultar());
         UI.dom.cnpjInput.addEventListener('keyup', (e) => {
@@ -379,7 +346,6 @@
         });
       },
 
-      /** Inicia a aplicação. */
       init() {
         UI.dom.cnpjInput.focus();
         UI.loadTheme();
