@@ -73,6 +73,11 @@
     }
     .result-item { transition: all 0.2s ease; }
     .result-item:hover { transform: translateX(5px); }
+    
+    /* Scrollbar personalizada para a lista de sócios se for muito longa */
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.5); border-radius: 20px; }
   </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -93,7 +98,7 @@
                     Consulta CNPJ
                     </span>
                 </h1>
-                <p class="text-white/80 text-lg text-left">Obtenha informações de empresas brasileiras</p>
+                <p class="text-white/80 text-lg text-left">Dados da Empresa e Sócios</p>
             </div>
         </div>
         <button id="themeToggle" class="w-10 h-10 rounded-full bg-white/20 dark:bg-gray-700/50 text-white dark:text-gray-300 flex items-center justify-center transition-transform hover:scale-110 z-10 flex-shrink-0">
@@ -153,7 +158,7 @@
     /**
      * @file Consulta CNPJ - Versão Refatorada com Otimização de API
      * @author HAlexandre
-     * @version 2.4.0
+     * @version 2.6.0
      */
 
     // --- Módulo de UI ---
@@ -198,15 +203,17 @@
         const simOuNao = (v) => v ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">Sim</span>' : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">Não</span>';
         const cnaePrincipal = `${data.cnae_fiscal} - ${data.cnae_fiscal_descricao}`;
         const cnaesSecundarios = data.cnaes_secundarios && data.cnaes_secundarios.length > 0
-            ? `<ul class="list-disc list-inside pl-2 text-left space-y-1">${data.cnaes_secundarios.map(cnae => `<li><strong>${cnae.codigo}</strong> - ${cnae.descricao}</li>`).join('')}</ul>`
+            ? `<ul class="list-disc list-inside pl-2 text-left space-y-1 text-sm text-gray-700 dark:text-gray-300">${data.cnaes_secundarios.slice(0, 5).map(cnae => `<li><strong>${cnae.codigo}</strong> - ${cnae.descricao}</li>`).join('')}${data.cnaes_secundarios.length > 5 ? `<li class="italic text-gray-500">+${data.cnaes_secundarios.length - 5} atividades...</li>` : ''}</ul>`
             : 'Não informada';
 
+        // --- BLOCO 1: DADOS DA EMPRESA ---
         const infoEmpresaHtml = `
           <div class="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-700/50 dark:to-gray-800/50 rounded-xl p-6 border border-blue-100 dark:border-gray-700 animate-slide-up">
             <div class="flex items-center gap-3 mb-6"><div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg></div><div><h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Informações da Empresa</h2><p class="text-sm text-gray-600 dark:text-gray-400">CNPJ: ${this.formatCnpj(data.cnpj)}</p></div></div>
             <dl class="divide-y divide-gray-100 dark:divide-gray-700">
               ${createRow('Razão Social', data.razao_social)}
               ${createRow('Nome Fantasia', data.nome_fantasia)}
+              ${createRow('Porte da Empresa', data.porte)} <!-- CAMPO ADICIONADO AQUI -->
               ${createRow('Atividade Principal (CNAE)', cnaePrincipal)}
               ${createRow('Atividades Secundárias', cnaesSecundarios)}
               ${createRow('Situação Cadastral', data.descricao_situacao_cadastral)}
@@ -218,6 +225,42 @@
             </dl>
           </div>`;
 
+        // --- BLOCO 2: SÓCIOS ---
+        let infoSociosHtml = '';
+        if (data.qsa && data.qsa.length > 0) {
+            const sociosList = data.qsa.map(socio => `
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-purple-100 dark:border-gray-600 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex items-start gap-3">
+                        <div class="mt-1 bg-purple-100 dark:bg-purple-900/30 p-2 rounded-full">
+                            <svg class="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-800 dark:text-gray-200 text-sm">${socio.nome_socio}</h4>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 font-medium">${socio.qualificacao_socio || 'Sócio'}</p>
+                            ${socio.data_entrada_sociedade ? `<p class="text-[10px] text-gray-400 mt-1">Entrada: ${this.formatDate(socio.data_entrada_sociedade)}</p>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            infoSociosHtml = `
+              <div class="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-700/50 dark:to-gray-800/50 rounded-xl p-6 border border-purple-100 dark:border-gray-700 animate-slide-up">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Quadro de Sócios</h2>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Sócios e Administradores (${data.qsa.length})</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto custom-scrollbar p-1">
+                    ${sociosList}
+                </div>
+              </div>`;
+        }
+
+        // --- BLOCO 3: SIMPLES NACIONAL ---
         const infoSimplesHtml = `
           <div class="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-700/50 dark:to-gray-800/50 rounded-xl p-6 border border-green-100 dark:border-gray-700 animate-slide-up">
             <div class="flex items-center gap-3 mb-6"><div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg></div><div><h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Simples Nacional</h2><p class="text-sm text-gray-600 dark:text-gray-400">Informações de enquadramento</p></div></div>
@@ -231,7 +274,7 @@
             </dl>
           </div>`;
         
-        this.dom.resultadoDiv.innerHTML = infoEmpresaHtml + infoSimplesHtml;
+        this.dom.resultadoDiv.innerHTML = infoEmpresaHtml + infoSociosHtml + infoSimplesHtml;
       },
 
       renderHistory(history) {
