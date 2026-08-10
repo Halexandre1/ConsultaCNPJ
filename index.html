@@ -48,12 +48,6 @@
     }
   </script>
   <style>
-    /*
-      IDENTIDADE VISUAL - Herbert Lemos Assessoria Contábil
-      Baseada no logotipo: fundo preto absoluto, elementos em branco/prata,
-      detalhe em vermelho (coração da assinatura) e tipografia serifada
-      para o nome da marca, remetendo à seriedade do símbolo (cruz + caduceu).
-    */
     :root {
       --brand-black: #0a0a0a;
       --brand-charcoal: #161616;
@@ -61,18 +55,23 @@
       --brand-silver: #c9c9c9;
       --brand-red: #e11d2e;
     }
-
     body {
       font-family: 'Inter', sans-serif;
       background: radial-gradient(circle at top, #1a1a1a 0%, #000000 70%);
       background-attachment: fixed;
       color: var(--brand-white);
+      transition: background 0.3s ease, color 0.3s ease;
     }
-
+    html:not(.dark) body {
+      background: radial-gradient(circle at top, #f0f0f0 0%, #d9d9d9 70%);
+      color: var(--brand-charcoal);
+    }
     .input-glow:focus {
       box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15), 0 10px 25px -5px rgba(255, 255, 255, 0.08);
     }
-
+    html:not(.dark) .input-glow:focus {
+      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.15), 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+    }
     .btn-gradient {
       background: linear-gradient(135deg, #2b2b2b 0%, #050505 100%);
       border: 1px solid rgba(255,255,255,0.25);
@@ -84,58 +83,63 @@
       transform: translateY(-2px);
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
     }
-
     .btn-outline {
       background: transparent;
       border: 2px solid rgba(255,255,255,0.35);
       transition: all 0.3s ease;
+    }
+    html:not(.dark) .btn-outline {
+      border: 2px solid rgba(0,0,0,0.35);
+      color: var(--brand-charcoal);
     }
     .btn-outline:hover:not(:disabled) {
       background: rgba(255,255,255,0.08);
       border-color: rgba(255,255,255,0.6);
       transform: translateY(-2px);
     }
-
+    html:not(.dark) .btn-outline:hover:not(:disabled) {
+      background: rgba(0,0,0,0.05);
+      border-color: rgba(0,0,0,0.6);
+    }
     .result-item { transition: all 0.2s ease; }
     .result-item:hover { transform: translateX(5px); }
-
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(200, 200, 200, 0.4); border-radius: 20px; }
-
     .cnae-toggle-link {
       cursor: pointer;
       text-decoration: underline;
       font-style: italic;
     }
-
     .brand-name {
       font-family: 'Playfair Display', serif;
       letter-spacing: 0.02em;
     }
-
     .brand-card {
       background: linear-gradient(145deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
       border: 1px solid rgba(255,255,255,0.08);
     }
+    html:not(.dark) .brand-card {
+      background: linear-gradient(145deg, rgba(255,255,255,0.8), rgba(255,255,255,0.5));
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    html:not(.dark) .text-white { color: var(--brand-charcoal); }
+    html:not(.dark) .text-white\/70 { color: rgba(22, 22, 22, 0.7); }
+    html:not(.dark) .text-white\/50 { color: rgba(22, 22, 22, 0.5); }
+    html:not(.dark) .bg-black\/40 { background-color: rgba(255, 255, 255, 0.6); }
+    html:not(.dark) .border-white\/15 { border-color: rgba(0, 0, 0, 0.15); }
+    html:not(.dark) .placeholder-white\/30::placeholder { color: rgba(0, 0, 0, 0.4); }
   </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
-
   <div class="fixed inset-0 overflow-hidden pointer-events-none">
     <div class="absolute top-1/4 left-1/4 w-32 h-32 bg-white opacity-5 rounded-full animate-float"></div>
     <div class="absolute top-3/4 right-1/4 w-20 h-20 bg-white opacity-5 rounded-full animate-float" style="animation-delay: -2s;"></div>
     <div class="absolute bottom-1/4 left-1/3 w-16 h-16 bg-white opacity-5 rounded-full animate-float" style="animation-delay: -4s;"></div>
   </div>
-
   <div class="w-full max-w-4xl mx-auto">
     <header class="text-center mb-8 animate-fade-in flex justify-between items-center w-full">
         <div class="flex items-center gap-4">
-            <!--
-              LOGO: substitua a URL abaixo pelo endereço público do seu logotipo
-              (ex.: hospede no mesmo repositório GitHub usado para a imagem antiga).
-              Sugestão de nome de arquivo: LOGO_HERBERT_LEMOS.png
-            -->
             <img src="https://raw.githubusercontent.com/Halexandre1/PDF_PRO/main/LOGO_HERBERT_LEMOS.png"
                  alt="Logotipo Herbert Lemos Assessoria Contábil"
                  class="w-16 h-16 rounded-full object-cover border-2 border-white/30 shadow-lg bg-black p-1">
@@ -152,7 +156,6 @@
     </header>
 
     <main class="relative brand-card backdrop-blur-xl rounded-2xl p-6 md:p-8 animate-slide-up shadow-2xl">
-
       <div class="mb-8">
         <div class="relative">
           <div class="flex flex-col sm:flex-row gap-4">
@@ -165,7 +168,7 @@
                 maxlength="18"
               >
               <div class="absolute left-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                <svg class="w-5 h-5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
               </div>
@@ -183,9 +186,8 @@
         </div>
       </div>
 
-      <div id="resultado" class="space-y-6"></div>
-
-      <!-- BOTÃO SINTEGRA (aparece após consulta bem-sucedida) -->
+      <div id="resultado" class="space-y-6 hidden"></div>
+      
       <div id="sintegraArea" class="hidden mt-6">
         <button
           id="consultarSintegraBtn"
@@ -209,31 +211,260 @@
       </div>
     </main>
 
-    <footer id="signature" class="text-center mt-8 text-white/50 text-sm"></footer>
+    <footer id="signature" class="text-center mt-8 text-white/50 text-sm">
+      Desenvolvido por HAlexandre - v2.9.1
+    </footer>
   </div>
 
   <script>
     /**
      * @file Consulta CNPJ - Herbert Lemos Assessoria Contábil
      * @author HAlexandre
-     * @version 2.9.0
-     * @changelog
-     *  - v2.7.0: Validação completa do dígito verificador do CNPJ (módulo 11)
-     *            e botão "Consultar Sintegra do Estado" com mapeamento das 27 SEFAZ.
-     *  - v2.8.0: Lista de Atividades Secundárias (CNAEs) agora exibe TODOS os
-     *            itens, com opção de expandir/recolher quando houver mais de 5.
-     *  - v2.9.0: Identidade visual atualizada para a marca Herbert Lemos
-     *            Assessoria Contábil (fundo preto, tipografia serifada, logo
-     *            e assinatura de rodapé com aviso de uso).
+     * @version 2.9.1
      */
 
-    // --- Módulo de Validação ---
+    // --- 1. Validador de CNPJ ---
     const Validator = {
       isValidCnpj(cnpj) {
         if (!cnpj || cnpj.length !== 14) return false;
         if (/^(\d)\1{13}$/.test(cnpj)) return false;
-
+        
         const calcularDigito = (base) => {
           let pesos = base.length === 12
             ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-            : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4
+            : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+          let soma = 0;
+          for (let i = 0; i < base.length; i++) {
+            soma += parseInt(base.charAt(i), 10) * pesos[i];
+          }
+          const resto = soma % 11;
+          return resto < 2 ? 0 : 11 - resto;
+        };
+
+        const base12 = cnpj.substring(0, 12);
+        const digito1 = calcularDigito(base12);
+        const base13 = base12 + digito1;
+        const digito2 = calcularDigito(base13);
+        return cnpj === base13 + digito2;
+      }
+    };
+
+    // --- 2. Links do Sintegra Completos ---
+    const SintegraLinks = {
+      AC: 'http://www.sefaz.ac.gov.br/',
+      AL: 'https://www.sefaz.al.gov.br/sintegra/',
+      AP: 'http://www.sefaz.ap.gov.br/',
+      AM: 'https://www.sefaz.am.gov.br/sintegra/sintegra0.asp',
+      BA: 'http://www.sefaz.ba.gov.br/servicos/sintegra/sintegra.htm',
+      CE: 'https://www.sefaz.ce.gov.br/sintegra/',
+      DF: 'http://www.receita.fazenda.df.gov.br/',
+      ES: 'https://internet.sefaz.es.gov.br/servicos/sintegra/',
+      GO: 'https://www.economia.go.gov.br/',
+      MA: 'http://www.sefaz.ma.gov.br/',
+      MT: 'https://www.sefaz.mt.gov.br/',
+      MS: 'http://www.sefaz.ms.gov.br/',
+      MG: 'https://www2.fazenda.mg.gov.br/sol/ctrl/SOL/CADASTRO/CONSULTA_PUBLICA/',
+      PA: 'https://app.sefa.pa.gov.br/Sintegra/',
+      PB: 'https://www.receita.pb.gov.br/',
+      PR: 'http://www.sintegra.fazenda.pr.gov.br/',
+      PE: 'http://www.sefaz.pe.gov.br/',
+      PI: 'http://webas.sefaz.pi.gov.br/sintegra/',
+      RJ: 'http://www.fazenda.rj.gov.br/',
+      RN: 'http://www.set.rn.gov.br/',
+      RS: 'https://www.sefaz.rs.gov.br/',
+      RO: 'http://www.sefin.ro.gov.br/',
+      RR: 'https://www.sefaz.rr.gov.br/',
+      SC: 'http://ws.sistemas.ro.gov.br/sintegra/',
+      SP: 'http://pfetr.fazenda.sp.gov.br/GeraPesquisaCadSintegra.aspx',
+      SE: 'http://www.sefaz.se.gov.br/',
+      TO: 'http://www.sefaz.to.gov.br/'
+    };
+
+    // --- 3. Referências aos Elementos da Tela ---
+    const inputCnpj = document.getElementById('cnpj');
+    const btnConsultar = document.getElementById('consultarBtn');
+    const divResultado = document.getElementById('resultado');
+    const btnSintegra = document.getElementById('consultarSintegraBtn');
+    const areaSintegra = document.getElementById('sintegraArea');
+    const textoSintegra = document.getElementById('sintegraBtnText');
+    const divHistorico = document.getElementById('historico');
+    const listaHistorico = document.getElementById('lista-historico');
+    const btnTheme = document.getElementById('themeToggle');
+    let currentUf = '';
+
+    // --- 4. Máscara de CNPJ ---
+    inputCnpj.addEventListener('input', function(e) {
+      let value = e.target.value.replace(/\D/g, ''); // Remove tudo que não for número
+      
+      // Aplica a formatação: 00.000.000/0000-00
+      if (value.length > 14) value = value.slice(0, 14);
+      value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+      value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+      value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+      value = value.replace(/(\d{4})(\d)/, '$1-$2');
+      
+      e.target.value = value;
+    });
+
+    // --- 5. Lógica da Consulta da API ---
+    async function realizarConsulta() {
+      const cnpjDigitado = inputCnpj.value.replace(/\D/g, ''); // Pega apenas os números
+
+      // Validações Iniciais
+      if (cnpjDigitado.length === 0) {
+        alert("Por favor, digite um CNPJ.");
+        return;
+      }
+      if (!Validator.isValidCnpj(cnpjDigitado)) {
+        alert("O CNPJ digitado é inválido. Verifique os números.");
+        return;
+      }
+
+      // Prepara botão de loading
+      btnConsultar.disabled = true;
+      document.getElementById('btnText').innerText = "Consultando...";
+      divResultado.classList.add('hidden');
+      areaSintegra.classList.add('hidden');
+
+      try {
+        // Usamos a BrasilAPI para buscar dados (gratuita e sem limite rigoroso de CORS)
+        const resposta = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjDigitado}`);
+        
+        if (!resposta.ok) {
+          throw new Error('Empresa não encontrada ou erro na base de dados.');
+        }
+
+        const dados = await resposta.json();
+        
+        // Exibe o resultado e salva no histórico
+        mostrarResultado(dados);
+        salvarNoHistorico(dados.cnpj, dados.razao_social);
+        atualizarHistoricoTela();
+
+      } catch (erro) {
+        alert("Erro na consulta: " + erro.message);
+      } finally {
+        // Restaura o botão
+        btnConsultar.disabled = false;
+        document.getElementById('btnText').innerText = "Consultar";
+      }
+    }
+
+    // --- 6. Mostrar os dados na tela ---
+    function mostrarResultado(dados) {
+      currentUf = dados.uf; // Guarda o estado para o Sintegra
+
+      // Constrói o HTML com as informações da empresa
+      const htmlResultado = `
+        <div class="p-4 border border-white/20 rounded-xl bg-white/5 animate-fade-in">
+          <h3 class="text-xl font-bold mb-1">${dados.razao_social}</h3>
+          <p class="text-sm opacity-70 mb-4">${dados.nome_fantasia || 'Sem nome fantasia'}</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p class="text-xs opacity-60 uppercase">CNPJ</p>
+              <p class="font-medium">${dados.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5")}</p>
+            </div>
+            <div>
+              <p class="text-xs opacity-60 uppercase">Situação Cadastral</p>
+              <p class="font-medium ${dados.descricao_situacao_cadastral === 'ATIVA' ? 'text-green-400' : 'text-red-400'}">
+                ${dados.descricao_situacao_cadastral}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs opacity-60 uppercase">Endereço</p>
+              <p class="font-medium">${dados.logradouro}, ${dados.numero} - ${dados.bairro}</p>
+            </div>
+            <div>
+              <p class="text-xs opacity-60 uppercase">Cidade / Estado</p>
+              <p class="font-medium">${dados.municipio} / ${dados.uf}</p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      divResultado.innerHTML = htmlResultado;
+      divResultado.classList.remove('hidden');
+
+      // Atualiza e exibe o botão do Sintegra
+      if (SintegraLinks[currentUf]) {
+        textoSintegra.innerText = `Consultar Sintegra - ${currentUf}`;
+        areaSintegra.classList.remove('hidden');
+      }
+    }
+
+    // --- 7. Histórico de Consultas ---
+    function salvarNoHistorico(cnpj, razaoSocial) {
+      let historico = JSON.parse(localStorage.getItem('cnpj_historico')) || [];
+      // Evita duplicados
+      historico = historico.filter(item => item.cnpj !== cnpj);
+      // Adiciona o novo no começo
+      historico.unshift({ cnpj, razaoSocial });
+      // Mantém apenas os 5 últimos
+      if (historico.length > 5) historico.pop();
+      localStorage.setItem('cnpj_historico', JSON.stringify(historico));
+    }
+
+    function atualizarHistoricoTela() {
+      const historico = JSON.parse(localStorage.getItem('cnpj_historico')) || [];
+      
+      if (historico.length === 0) return;
+
+      divHistorico.classList.remove('hidden');
+      listaHistorico.innerHTML = historico.map(item => `
+        <div class="flex justify-between items-center p-3 rounded-lg bg-white/5 border border-white/10 result-item">
+          <div class="truncate pr-4">
+            <p class="font-semibold text-sm truncate">${item.razaoSocial}</p>
+            <p class="text-xs opacity-60">${item.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5")}</p>
+          </div>
+          <button onclick="carregarDoHistorico('${item.cnpj}')" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1 rounded transition-colors">
+            Ver
+          </button>
+        </div>
+      `).join('');
+    }
+
+    // Função para preencher o input quando clica no botão "Ver" do histórico
+    window.carregarDoHistorico = function(cnpj) {
+      inputCnpj.value = cnpj;
+      // Dispara o evento de input manualmente para aplicar a máscara
+      inputCnpj.dispatchEvent(new Event('input'));
+      realizarConsulta();
+    }
+
+    // --- 8. Eventos de Clique ---
+    
+    // Botão de Consultar
+    btnConsultar.addEventListener('click', realizarConsulta);
+
+    // Permitir consulta apertando "Enter"
+    inputCnpj.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') realizarConsulta();
+    });
+
+    // Botão do Sintegra
+    btnSintegra.addEventListener('click', () => {
+      if (currentUf && SintegraLinks[currentUf]) {
+        window.open(SintegraLinks[currentUf], '_blank');
+      }
+    });
+
+    // Toggle Dark Mode
+    btnTheme.addEventListener('click', () => {
+      const htmlTag = document.documentElement;
+      if (htmlTag.classList.contains('dark')) {
+        htmlTag.classList.remove('dark');
+        btnTheme.innerText = '☀️';
+      } else {
+        htmlTag.classList.add('dark');
+        btnTheme.innerText = '🌙';
+      }
+    });
+
+    // Inicialização ao carregar a página
+    window.onload = () => {
+      atualizarHistoricoTela();
+    };
+  </script>
+</body>
+</html>
