@@ -74,7 +74,7 @@ box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
 .result-item { transition: all 0.2s ease; }
 .result-item:hover { transform: translateX(5px); }
 
-/* Scrollbar personalizada para a lista de sócios se for muito longa */
+/* Scrollbar personalizada para a lista de sócios e CNAEs se for muito longa */
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.5); border-radius: 20px; }
@@ -158,11 +158,10 @@ Consultas Recentes
 /**
 * @file Consulta CNPJ - Versão Refatorada com Otimização de API e Sintegra
 * @author HAlexandre
-* @version 2.7.0
+* @version 2.8.0
 */
 
 // --- Módulo de Links do Sintegra ---
-// Dicionário (Objeto) que mapeia a sigla de cada estado para o site correspondente
 const Sintegra = {
   links: {
     AC: 'http://www.sefaz.ac.gov.br/',
@@ -236,8 +235,19 @@ const endereco = [data.logradouro, data.numero, data.complemento, data.bairro, `
 const capital = data.capital_social ? parseFloat(data.capital_social).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'Não informado';
 const simOuNao = (v) => v ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">Sim</span>' : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">Não</span>';
 const cnaePrincipal = `${data.cnae_fiscal} - ${data.cnae_fiscal_descricao}`;
+
+// ==========================================
+// AQUI ESTÁ A ALTERAÇÃO SOLICITADA
+// 1. Removido o ".slice(0, 5)" para listar todos os itens.
+// 2. Removida a lógica condicional para esconder o restante com "+X atividades".
+// 3. Adicionada a classe "max-h-48 overflow-y-auto custom-scrollbar" para criar a barra de rolagem.
+// ==========================================
 const cnaesSecundarios = data.cnaes_secundarios && data.cnaes_secundarios.length > 0
-? `<ul class="list-disc list-inside pl-2 text-left space-y-1 text-sm text-gray-700 dark:text-gray-300">${data.cnaes_secundarios.slice(0, 5).map(cnae => `<li><strong>${cnae.codigo}</strong> - ${cnae.descricao}</li>`).join('')}${data.cnaes_secundarios.length > 5 ? `<li class="italic text-gray-500">+${data.cnaes_secundarios.length - 5} atividades...</li>` : ''}</ul>`
+? `<div class="max-h-48 overflow-y-auto custom-scrollbar pr-2 mt-1">
+     <ul class="list-disc list-inside text-left space-y-1 text-sm text-gray-700 dark:text-gray-300">
+       ${data.cnaes_secundarios.map(cnae => `<li><strong>${cnae.codigo}</strong> - ${cnae.descricao}</li>`).join('')}
+     </ul>
+   </div>`
 : 'Não informada';
 
 // --- BLOCO 1: DADOS DA EMPRESA ---
@@ -309,7 +319,6 @@ ${createRow('Data de Exclusão do MEI', this.formatDate(data.data_exclusao_do_me
 </div>`;
 
 // --- BLOCO 4: BOTÃO DO SINTEGRA ---
-// Cria uma tag <a> estilizada como botão que aponta para o link correspondente ao Estado
 let infoSintegraHtml = '';
 if (data.uf && Sintegra.links[data.uf]) {
   infoSintegraHtml = `
