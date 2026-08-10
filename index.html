@@ -91,7 +91,8 @@ box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
 <div class="w-full max-w-4xl mx-auto">
 <header class="text-center mb-8 animate-fade-in flex justify-between items-center w-full">
 <div class="flex items-center gap-4">
-<img src="https://raw.githubusercontent.com/Halexandre1/PDF_PRO/main/HERBERT.jpg" alt="Logótipo" class="w-14 h-14 rounded-full object-cover border-2 border-white/50 shadow-lg">
+<!-- AQUI ESTÁ A CORREÇÃO: O link agora aponta para LOGO_HERBERT_LEMOS.png -->
+<img src="https://raw.githubusercontent.com/Halexandre1/PDF_PRO/main/LOGO_HERBERT_LEMOS.png" alt="Logótipo" class="w-14 h-14 rounded-full object-cover border-2 border-white/50 shadow-lg bg-black">
 <div>
 <h1 class="text-4xl md:text-5xl font-bold text-white text-left">
 <span class="bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
@@ -156,9 +157,9 @@ Consultas Recentes
 
 <script>
 /**
-* @file Consulta CNPJ - Versão Refatorada com Otimização de API e Sintegra
+* @file Consulta CNPJ - Correção de Logo
 * @author HAlexandre
-* @version 2.8.0
+* @version 2.8.1
 */
 
 // --- Módulo de Links do Sintegra ---
@@ -236,12 +237,6 @@ const capital = data.capital_social ? parseFloat(data.capital_social).toLocaleSt
 const simOuNao = (v) => v ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">Sim</span>' : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">Não</span>';
 const cnaePrincipal = `${data.cnae_fiscal} - ${data.cnae_fiscal_descricao}`;
 
-// ==========================================
-// AQUI ESTÁ A ALTERAÇÃO SOLICITADA
-// 1. Removido o ".slice(0, 5)" para listar todos os itens.
-// 2. Removida a lógica condicional para esconder o restante com "+X atividades".
-// 3. Adicionada a classe "max-h-48 overflow-y-auto custom-scrollbar" para criar a barra de rolagem.
-// ==========================================
 const cnaesSecundarios = data.cnaes_secundarios && data.cnaes_secundarios.length > 0
 ? `<div class="max-h-48 overflow-y-auto custom-scrollbar pr-2 mt-1">
      <ul class="list-disc list-inside text-left space-y-1 text-sm text-gray-700 dark:text-gray-300">
