@@ -170,7 +170,27 @@
             </button>
           </div>
         </div>
-        <p id="csvStatus" class="text-xs text-center mt-2 text-gray-500 dark:text-gray-400">Carregando base de dados CNAE...</p>
+        
+        <!-- MODIFICADO: Bloco de aviso sobre a base de dados do CNAE com link e data -->
+        <div class="mt-4 flex flex-col sm:flex-row items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+          <div class="flex items-center gap-2">
+            <svg id="csvIcon" class="w-4 h-4 text-blue-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            <span id="csvStatus" class="font-medium">Carregando base tributária...</span>
+          </div>
+          <span class="hidden sm:inline text-gray-300 dark:text-gray-600">|</span>
+          <p class="text-center sm:text-left">
+            Base atualizada em <strong>14/08/2026 às 09:53</strong>. 
+            <a href="https://www.contabilizei.com.br/contabilidade-online/cnae/#tabela-cnae-simples-nacional-lista-completa-de-codigos" 
+               target="_blank" rel="noopener noreferrer" 
+               class="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1 transition-colors">
+               Fonte oficial (Contabilizei)
+               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+            </a>
+          </p>
+        </div>
+
       </div>
 
       <div id="resultado" class="space-y-6"></div>
@@ -193,9 +213,9 @@
 
   <script>
     /**
-     * @file Consulta CNPJ com Base CNAE Local (Correção de Encoding)
+     * @file Consulta CNPJ com Base CNAE Local (Com Aviso de Fonte)
      * @author HAlexandre
-     * @version 4.0.1
+     * @version 4.0.2
      */
 
     const Sintegra = {
@@ -236,23 +256,33 @@
 
       async carregar() {
         return new Promise((resolve, reject) => {
+          const statusText = document.getElementById('csvStatus');
+          const statusIcon = document.getElementById('csvIcon');
+
           Papa.parse("Base_CNAE.csv", {
             download: true,
             header: true,
             skipEmptyLines: true,
-            // 🌟 SOLUÇÃO: Esta linha avisa ao programa que o arquivo tem acentos padrão Windows/Excel
             encoding: "ISO-8859-1", 
             complete: (results) => {
               this.processarDados(results.data);
               this.pronto = true;
-              document.getElementById('csvStatus').innerText = "✅ Base de dados tributária conectada.";
-              setTimeout(() => { document.getElementById('csvStatus').classList.add('hidden'); }, 3000);
+              
+              // Atualiza o visual para sucesso
+              statusText.innerText = "Base pronta";
+              statusIcon.classList.remove('animate-pulse', 'text-blue-500');
+              statusIcon.classList.add('text-green-500');
+              statusIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
               resolve();
             },
             error: (error) => {
               console.error("Erro ao carregar CSV do CNAE:", error);
-              document.getElementById('csvStatus').innerText = "⚠️ Aviso: Base de dados tributária offline. Mostrando apenas dados da Receita.";
-              document.getElementById('csvStatus').classList.add('text-yellow-600', 'dark:text-yellow-400');
+              
+              // Atualiza o visual para erro
+              statusText.innerText = "Base offline";
+              statusIcon.classList.remove('animate-pulse', 'text-blue-500');
+              statusIcon.classList.add('text-yellow-500');
+              statusIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>';
               resolve(); 
             }
           });
@@ -269,7 +299,6 @@
             this.dados[codigoLimpo] = [];
           }
 
-          // Como arrumamos o encoding, agora as colunas com acento (Descrição, Alíquota) serão lidas perfeitamente
           this.dados[codigoLimpo].push({
             descricao: linha.Descrição || '',
             anexo: linha.Anexo || '',
@@ -294,10 +323,21 @@
         
         infos.forEach(info => {
           html += `
-            <div class="flex flex-wrap gap-2 text-xs">
+            <div class="flex flex-wrap gap-2 text-xs items-center">
               ${info.anexo ? `<span class="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300 px-2 py-1 rounded border border-indigo-200 dark:border-indigo-800">Anexo: <b>${info.anexo}</b></span>` : ''}
               ${info.fatorR ? `<span class="bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 px-2 py-1 rounded border border-amber-200 dark:border-amber-800">Fator R: <b>${info.fatorR}</b></span>` : ''}
               ${info.aliquota ? `<span class="bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-300 px-2 py-1 rounded border border-teal-200 dark:border-teal-800">Alíquota: <b>${info.aliquota}%</b></span>` : ''}
+              
+              <!-- Adicionado ícone de dica para explicar que a informação é de referência -->
+              <div class="group relative inline-block cursor-help ml-1">
+                <svg class="w-4 h-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div class="opacity-0 w-48 bg-black text-white text-center text-xs rounded-lg py-2 absolute z-10 bottom-full left-1/2 -translate-x-1/2 mb-2 pointer-events-none group-hover:opacity-100 transition-opacity duration-300 px-2 shadow-lg">
+                  Referência tributária. Confirme sempre no site oficial.
+                  <svg class="absolute text-black h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                </div>
+              </div>
             </div>
           `;
         });
