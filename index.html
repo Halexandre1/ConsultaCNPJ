@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -84,7 +86,6 @@
     .result-item { transition: all 0.2s ease; }
     .result-item:hover { transform: translateX(5px); }
 
-    /* Scrollbar personalizada para a lista de sócios e CNAEs se for muito longa */
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb {
@@ -105,7 +106,6 @@
     
     <header class="text-center mb-8 animate-fade-in flex justify-between items-center w-full">
       <div class="flex items-center gap-4">
-        <!-- 🌟 ATUALIZADO: Usando o caminho local para o logo -->
         <img src="LOGO_HERBERT_LEMOS.png" alt="Logotipo" class="w-14 h-14 rounded-full object-cover border-2 border-white/50 shadow-lg bg-black">
         <div>
           <h1 class="text-4xl md:text-5xl font-bold text-white text-left">
@@ -124,7 +124,6 @@
 
     <main class="relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 rounded-2xl p-6 md:p-8 animate-slide-up shadow-2xl">
 
-      <!-- Aviso institucional reduzido -->
       <div class="mb-6 p-4 rounded-xl bg-blue-50/70 dark:bg-blue-900/40 border border-blue-200/70 dark:border-blue-500/40 text-sm text-blue-900 dark:text-blue-200 shadow-sm">
         <h3 class="font-bold text-lg mb-2 text-blue-800 dark:text-blue-300">Emissão de Comprovante de Inscrição e de Situação Cadastral</h3>
         <p class="mb-2 font-medium">Cidadão,</p>
@@ -171,6 +170,7 @@
             </button>
           </div>
         </div>
+        <p id="csvStatus" class="text-xs text-center mt-2 text-gray-500 dark:text-gray-400">Carregando base de dados CNAE...</p>
       </div>
 
       <div id="resultado" class="space-y-6"></div>
@@ -193,12 +193,11 @@
 
   <script>
     /**
-     * @file Consulta CNPJ - Simples + Resumo para Impressão (versão corrigida e limpa)
+     * @file Consulta CNPJ com Base CNAE Local (Correção de Encoding)
      * @author HAlexandre
-     * @version 3.0.2
+     * @version 4.0.1
      */
 
-    // --- Módulo de Links do Sintegra ---
     const Sintegra = {
       links: {
         AC: 'https://sefazonline.ac.gov.br/sefazonline/app.wmsintegralista/',
@@ -228,6 +227,83 @@
         SP: 'http://pfetr.fazenda.sp.gov.br/GeraPesquisaCadSintegra.aspx',
         SE: 'http://www.sefaz.se.gov.br/',
         TO: 'http://www.sefaz.to.gov.br/'
+      }
+    };
+
+    const CnaeDB = {
+      dados: {},
+      pronto: false,
+
+      async carregar() {
+        return new Promise((resolve, reject) => {
+          Papa.parse("Base_CNAE.csv", {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            // 🌟 SOLUÇÃO: Esta linha avisa ao programa que o arquivo tem acentos padrão Windows/Excel
+            encoding: "ISO-8859-1", 
+            complete: (results) => {
+              this.processarDados(results.data);
+              this.pronto = true;
+              document.getElementById('csvStatus').innerText = "✅ Base de dados tributária conectada.";
+              setTimeout(() => { document.getElementById('csvStatus').classList.add('hidden'); }, 3000);
+              resolve();
+            },
+            error: (error) => {
+              console.error("Erro ao carregar CSV do CNAE:", error);
+              document.getElementById('csvStatus').innerText = "⚠️ Aviso: Base de dados tributária offline. Mostrando apenas dados da Receita.";
+              document.getElementById('csvStatus').classList.add('text-yellow-600', 'dark:text-yellow-400');
+              resolve(); 
+            }
+          });
+        });
+      },
+
+      processarDados(linhasCsv) {
+        linhasCsv.forEach(linha => {
+          const codigoLimpo = (linha.CNAE || '').toString().replace(/\D/g, '');
+          
+          if (!codigoLimpo) return;
+
+          if (!this.dados[codigoLimpo]) {
+            this.dados[codigoLimpo] = [];
+          }
+
+          // Como arrumamos o encoding, agora as colunas com acento (Descrição, Alíquota) serão lidas perfeitamente
+          this.dados[codigoLimpo].push({
+            descricao: linha.Descrição || '',
+            anexo: linha.Anexo || '',
+            fatorR: linha['Fator R'] || '',
+            aliquota: linha['Alíquota'] || '',
+            contabilizei: linha.Contabilizei || ''
+          });
+        });
+      },
+
+      buscarInfo(codigoCnae) {
+        if (!this.pronto) return null;
+        const codigoLimpo = (codigoCnae || '').toString().replace(/\D/g, '');
+        return this.dados[codigoLimpo] || null;
+      },
+
+      gerarHtmlBadges(codigoCnae) {
+        const infos = this.buscarInfo(codigoCnae);
+        if (!infos || infos.length === 0) return '';
+
+        let html = '<div class="mt-2 flex flex-col gap-2">';
+        
+        infos.forEach(info => {
+          html += `
+            <div class="flex flex-wrap gap-2 text-xs">
+              ${info.anexo ? `<span class="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300 px-2 py-1 rounded border border-indigo-200 dark:border-indigo-800">Anexo: <b>${info.anexo}</b></span>` : ''}
+              ${info.fatorR ? `<span class="bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 px-2 py-1 rounded border border-amber-200 dark:border-amber-800">Fator R: <b>${info.fatorR}</b></span>` : ''}
+              ${info.aliquota ? `<span class="bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-300 px-2 py-1 rounded border border-teal-200 dark:border-teal-800">Alíquota: <b>${info.aliquota}%</b></span>` : ''}
+            </div>
+          `;
+        });
+        
+        html += '</div>';
+        return html;
       }
     };
 
@@ -309,7 +385,6 @@
         const optanteSimples = data.opcao_pelo_simples ? 'SIM' : 'NÃO';
         const optanteMei = data.opcao_pelo_mei ? 'SIM' : 'NÃO';
 
-        // Geração do HTML para a janela de impressão
         const resumoHtml = `
           <!DOCTYPE html>
           <html lang="pt-BR">
@@ -388,7 +463,7 @@
               </div>
 
               <div class="footer">
-                Este documento é um resumo gerado a partir de dados públicos da Receita Federal (BrasilAPI). Não possui validade legal como certidão.
+                Este documento é um resumo gerado a partir de dados públicos da Receita Federal. Não possui validade legal como certidão.
               </div>
             </div>
             <script>window.onload = function() { window.print(); }<\/script>
@@ -407,7 +482,6 @@
       },
 
       renderResults(data) {
-        // Função auxiliar para criar linhas de dados (Data List)
         const createRow = (label, value) => {
           if (!value && value !== 0 && value !== false) return '';
           return `
@@ -431,31 +505,38 @@
           ? '<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400 border border-green-200 dark:border-green-800 shadow-sm">SIM</span>'
           : '<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400 border border-red-200 dark:border-red-800 shadow-sm">NÃO</span>';
 
-        const cnaePrincipal = `${data.cnae_fiscal} - ${data.cnae_fiscal_descricao}`;
+        const badgesPrincipal = CnaeDB.gerarHtmlBadges(data.cnae_fiscal);
+        const cnaePrincipalHTML = `
+          <div>
+            ${data.cnae_fiscal} - ${data.cnae_fiscal_descricao}
+            ${badgesPrincipal}
+          </div>
+        `;
 
-        // Cria a lista de CNAEs secundários (com scroll se houver muitos)
         let cnaesSecundarios = 'Não informada';
         if (data.cnaes_secundarios && data.cnaes_secundarios.length > 0) {
           cnaesSecundarios = `
-            <div class="max-h-40 overflow-y-auto custom-scrollbar pr-2 mt-1 bg-white dark:bg-gray-800 rounded-md p-2 border border-gray-100 dark:border-gray-700">
-              <ul class="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                ${data.cnaes_secundarios.map(cnae => `
-                  <li class="flex gap-2">
-                    <span class="font-bold text-gray-900 dark:text-white shrink-0">${cnae.codigo}</span>
-                    <span class="text-gray-600 dark:text-gray-400">- ${cnae.descricao}</span>
-                  </li>
-                `).join('')}
+            <div class="max-h-[300px] overflow-y-auto custom-scrollbar pr-2 mt-1 bg-white dark:bg-gray-800 rounded-md p-2 border border-gray-100 dark:border-gray-700">
+              <ul class="space-y-4 text-sm text-gray-700 dark:text-gray-300">
+                ${data.cnaes_secundarios.map(cnae => {
+                  const badgesSecundario = CnaeDB.gerarHtmlBadges(cnae.codigo);
+                  return `
+                    <li class="flex flex-col border-b border-gray-100 dark:border-gray-700 pb-2 last:border-0 last:pb-0">
+                      <div class="flex gap-2">
+                        <span class="font-bold text-gray-900 dark:text-white shrink-0">${cnae.codigo}</span>
+                        <span class="text-gray-600 dark:text-gray-400">- ${cnae.descricao}</span>
+                      </div>
+                      ${badgesSecundario}
+                    </li>
+                  `;
+                }).join('')}
               </ul>
             </div>
           `;
         }
 
-        // --- CONSTRUÇÃO DO HTML DOS BLOCOS ---
-
-        // Bloco 1: Informações da Empresa
         const infoEmpresaHtml = `
           <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 md:p-8 shadow-lg border border-gray-100 dark:border-gray-700 animate-slide-up relative overflow-hidden">
-            <!-- Decoração de fundo -->
             <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-bl-full -z-10"></div>
             
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 border-b border-gray-100 dark:border-gray-700 pb-6">
@@ -496,7 +577,7 @@
               ${createRow('Situação Cadastral', `<span class="${data.descricao_situacao_cadastral === 'ATIVA' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'} font-bold">${data.descricao_situacao_cadastral}</span>`)}
               ${createRow('Data da Situação', this.formatDate(data.data_situacao_cadastral))}
               ${createRow('Capital Social', capital)}
-              ${createRow('Atividade Principal (CNAE)', cnaePrincipal)}
+              ${createRow('Atividade Principal (CNAE)', cnaePrincipalHTML)}
               ${createRow('Atividades Secundárias', cnaesSecundarios)}
               ${createRow('Endereço', endereco)}
               ${createRow('Telefone', data.ddd_telefone_1)}
@@ -505,10 +586,8 @@
           </div>
         `;
 
-        // Bloco 2: Quadro de Sócios (QSA)
         let infoSociosHtml = '';
         if (data.qsa && data.qsa.length > 0) {
-          // Aqui garantimos que o template literal construa a string corretamente sem "vazar"
           const sociosCards = data.qsa.map(socio => {
             const dataEntrada = socio.data_entrada_sociedade ? `
               <div class="mt-3 pt-3 border-t border-purple-100 dark:border-purple-900/30 text-xs text-gray-500 dark:text-gray-400 flex justify-between items-center">
@@ -555,7 +634,6 @@
           `;
         }
 
-        // Bloco 3: Simples Nacional e MEI
         const infoSimplesHtml = `
           <div class="bg-green-50/50 dark:bg-green-900/10 rounded-2xl p-6 md:p-8 border border-green-100 dark:border-green-900/30 animate-slide-up mt-6">
             <div class="flex items-center gap-4 mb-6">
@@ -571,7 +649,6 @@
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- Simples -->
               <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
                 <h3 class="font-bold text-gray-700 dark:text-gray-300 mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">Simples Nacional</h3>
                 <dl class="space-y-3">
@@ -592,7 +669,6 @@
                 </dl>
               </div>
               
-              <!-- MEI -->
               <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
                 <h3 class="font-bold text-gray-700 dark:text-gray-300 mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">SIMEI (MEI)</h3>
                 <dl class="space-y-3">
@@ -616,7 +692,6 @@
           </div>
         `;
 
-        // Bloco 4: Link Sintegra
         let infoSintegraHtml = '';
         if (data.uf && Sintegra.links[data.uf]) {
           infoSintegraHtml = `
@@ -632,10 +707,8 @@
           `;
         }
 
-        // Armazena dados globalmente para o print funcionar
         window.__lastCnpjData = data;
 
-        // Injeta tudo no DOM
         this.dom.resultadoDiv.innerHTML = infoEmpresaHtml + infoSociosHtml + infoSimplesHtml + infoSintegraHtml;
       },
 
@@ -678,7 +751,7 @@
           this.dom.htmlEl.classList.add('dark');
           this.dom.themeToggle.innerHTML = '☀️';
         } else {
-          this.dom.htmlEl.classList.remove('dark'); // Garante que a classe seja removida se for light
+          this.dom.htmlEl.classList.remove('dark');
           this.dom.themeToggle.innerHTML = '🌙';
         }
       },
@@ -691,7 +764,6 @@
     const API = {
       async fetchCnpjData(cnpj) {
         try {
-          // A BrasilAPI não precisa de token para o endpoint público
           const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
           
           if (!response.ok) {
@@ -701,15 +773,12 @@
               if (errorData.message) {
                 errorMessage = errorData.message;
               }
-            } catch (e) {
-              // Falha ao parsear o JSON de erro, mantém a mensagem padrão
-            }
+            } catch (e) {}
             throw new Error(errorMessage);
           }
           
           return await response.json();
         } catch (error) {
-          // Captura erros de rede (ex: sem internet, CORS)
           if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
             throw new Error('Erro de conexão. Verifique sua internet ou se o serviço da BrasilAPI está disponível.');
           }
@@ -724,7 +793,7 @@
         try {
           return JSON.parse(localStorage.getItem(this.key) || '[]');
         } catch (e) {
-          return []; // Em caso de localStorage corrompido
+          return [];
         }
       },
       add(cnpj, razaoSocial) {
@@ -740,22 +809,18 @@
 
     const App = {
       async consultar(cnpjFromHistory = null) {
-        // Remove tudo que não for dígito
         const rawInput = cnpjFromHistory || UI.dom.cnpjInput.value;
         const cnpj = rawInput.replace(/\D/g, '');
         
-        // Validação básica
         if (cnpj.length !== 14 || /^(\d)\1{13}$/.test(cnpj)) {
           UI.showMessage('Por favor, digite um CNPJ válido com 14 dígitos numéricos.');
           UI.dom.cnpjInput.focus();
           return;
         }
         
-        // Atualiza o input visualmente (formata o CNPJ se foi digitado manual)
         if (!cnpjFromHistory) {
           UI.dom.cnpjInput.value = UI.formatCnpj(cnpj);
         } else {
-          // Se veio do histórico, preenche o input também
            UI.dom.cnpjInput.value = UI.formatCnpj(cnpj);
         }
 
@@ -775,13 +840,10 @@
       initEvents() {
         UI.dom.consultarBtn.addEventListener('click', () => this.consultar());
         
-        // Máscara e evento de Enter no input
         UI.dom.cnpjInput.addEventListener('input', (e) => {
-          // Apenas permite números na digitação
           let value = e.target.value.replace(/\D/g, '');
           
-          // Aplica a máscara enquanto digita
-          if (value.length > 14) value = value.slice(0, 14); // Limita a 14 dígitos
+          if (value.length > 14) value = value.slice(0, 14);
 
           value = value.replace(/^(\d{2})(\d)/, '$1.$2');
           value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
@@ -803,16 +865,17 @@
         });
       },
 
-      init() {
+      async init() {
         UI.dom.cnpjInput.focus();
         UI.loadTheme();
         UI.setSignature();
         UI.renderHistory(History.get());
         this.initEvents();
+        
+        await CnaeDB.carregar();
       }
     };
 
-    // Inicializa quando o DOM estiver pronto
     document.addEventListener('DOMContentLoaded', () => App.init());
   </script>
 </body>
